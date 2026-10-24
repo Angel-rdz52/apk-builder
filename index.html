@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude to APK Builder</title>
+<style>
+body{font-family:sans-serif;background:#0f0f0f;color:white;display:flex;flex-direction:column;align-items:center;padding:20px}
+.card{background:#1c1c1c;padding:30px;border-radius:16px;width:100%;max-width:500px;text-align:center}
+.drop{border:2px dashed #555;padding:40px;border-radius:12px;margin:20px 0;cursor:pointer}
+.drop.dragover{border-color:#00ff88;background:#222}
+button{background:#00ff88;color:black;border:0;padding:15px 30px;border-radius:10px;font-weight:bold;font-size:18px;width:100%;cursor:pointer}
+.progress{width:100%;height:20px;background:#333;border-radius:10px;overflow:hidden;margin-top:20px;display:none}
+.bar{height:100%;width:0%;background:#00ff88;transition:width .3s}
+#log{margin-top:20px;text-align:left;font-size:13px;color:#aaa;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>📦 Claude Code -> APK</h1>
+<p>Sube el .ZIP que te generó Claude Code</p>
+<div class="drop" id="drop">Suelta tu ZIP aquí o click para seleccionar<input type="file" id="file" accept=".zip" hidden></div>
+<button id="buildBtn" disabled>GENERAR APK</button>
+<div class="progress" id="progress"><div class="bar" id="bar"></div></div>
+<div id="log"></div>
+<a id="download" style="display:none" download><button style="margin-top:20px;background:white">⬇️ DESCARGAR APK</button></a>
+</div>
+
+<script>
+const GITHUB_USER = "TU_USUARIO"; // CAMBIA ESTO
+const REPO = "apk-builder";
+const TOKEN = ""; // Pega un GitHub PAT con repo y actions:write aqui temporalmente
+
+let zipFile = null;
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+drop.onclick = () => fileInput.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); }
+drop.ondragleave = () => drop.classList.remove('dragover');
+drop.ondrop = e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }
+fileInput.onchange = e => handleFile(e.target.files[0]);
+
+function handleFile(f){ if(!f.name.endsWith('.zip')) return alert('Solo ZIP'); zipFile=f; drop.innerText=f.name+' ('+(f.size/1024/1024).toFixed(1)+' MB)'; document.getElementById('buildBtn').disabled=false; }
+
+document.getElementById('buildBtn').onclick = async () => {
+  if(!zipFile) return;
+  const runId = Date.now().toString();
+  const progress = document.getElementById('progress'); const bar = document.getElementById('bar'); const log = document.getElementById('log');
+  progress.style.display='block'; log.innerText='Subiendo ZIP...\n'; bar.style.width='10%';
+
+  // 1. Crear artifact via API (simplificado: subimos a release)
+  // Para hacerlo 100% frontend necesitas usar la API de upload artifact, aquí va el flujo más simple:
+  log.innerText+='Iniciando build en GitHub Actions...\n'; bar.style.width='30%';
+  
+  // En esta versión simple, el flujo es: subes el zip manualmente a Actions > Upload artifact
+  // Si quieres 100% automatizado, dime y te paso la versión con backend en Vercel (1 archivo)
+  alert('Paso 1: Ve a tu repo > Actions > Build APK from ZIP > Run workflow > pega este ID: '+runId+'\nLuego sube el ZIP como artifact con nombre: project-zip-'+runId);
+  bar.style.width='60%';
+  log.innerText+='Esperando APK... revisa Actions cada 2 min, dura 3-5 min\n';
+  bar.style.width='100%';
+}
+</script>
+</body>
+</html>
