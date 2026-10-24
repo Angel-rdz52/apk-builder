@@ -1,0 +1,54 @@
+name: Build APK from ZIP
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID del build'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descargar proyecto ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: project-zip-${{ inputs.run_id }}
+          path: ./
+
+      - name: Descomprimir proyecto
+        run: |
+          rm -rf app-build
+          mkdir app-build
+          unzip -o uploaded.zip -d app-build
+          ls app-build
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Dar permisos gradlew
+        run: chmod +x app-build/gradlew || chmod +x app-build/*/gradlew || true
+
+      - name: Build Debug APK
+        run: |
+          cd app-build
+          # busca donde esta el gradlew
+          GRADLE=$(find . -name gradlew -type f | head -n 1)
+          DIR=$(dirname $GRADLE)
+          cd $DIR
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ inputs.run_id }}
+          path: app-build/**/app/build/outputs/apk/debug/*.apk
